@@ -1,5 +1,8 @@
 const WdioReporter = require('@wdio/reporter').default;
 const assert = require('assert');
+const fs = require('fs')
+const path = require('path')
+const Readable = require('stream').Readable
 
 /**
  * @typedef {Object} SuiteStats
@@ -80,12 +83,17 @@ class WdioTeamcityReporter extends WdioReporter {
       captureStandardOutput: r.bool(reporterOptions.captureStandardOutput, false),
       flowId: r.bool(reporterOptions.flowId, true),
       message: r.string(reporterOptions.message, '[title]'),
+      screenshotPath: r.string(reporterOptions.screenshotPath, 'temp/screenshots/'),
       stdout: true,
       writeStream: process.stdout,
     };
     const options = Object.assign(reporterOptions, params);
 
     super(options);
+
+    this.currentTestStats = null;
+    this.screenshotDirFullPath = path.join(process.cwd(), params.screenshotPath);
+    fs.mkdirSync(this.screenshotFullPath, { recursive: true });
   }
 
   /**
@@ -99,6 +107,7 @@ class WdioTeamcityReporter extends WdioReporter {
    * @param {TestStats} testStats
    */
   onTestStart (testStats) {
+    this.currentTestStats = testStats;
     this._m('##teamcity[testStarted name=\'{name}\' captureStandardOutput=\'{capture}\' flowId=\'{id}\']', testStats);
   }
 
@@ -108,6 +117,31 @@ class WdioTeamcityReporter extends WdioReporter {
   onTestEnd (testStats) {
     if (testStats.state === 'skipped') return;
     this._m('##teamcity[testFinished name=\'{name}\' duration=\'{ms}\' flowId=\'{id}\']', testStats);
+  }
+
+  onAfterCommand (command) {
+    const screenshotRegEx = /\/session\/[^/]*\/screenshot/;
+    if (!screenshotRegEx.test(command.endpoint) || !command.result.value) {
+      return;
+    }
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    const hours = String(currentDate.getHours()).padStart(2, '0');
+    const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+    const seconds = String(currentDate.getSeconds()).padStart(2, '0');
+    const milliseconds = String(currentDate.getMilliseconds()).padStart(3, '0');
+    const fileName = `${day}-${month}-${year}_${hours}-${minutes}-${seconds}_${milliseconds}.png`;
+
+    const bufferData = Buffer.from(command.result.value, 'base64');
+    const streamData = new Readable();
+    const filePath = path.join(this.screenshotDirFullPath, fileName);
+    streamData.push(bufferData);
+    streamData.push(null);
+    streamData.pipe(fs.createWriteStream(filePath));
+    const screenshotDisplayName = `Screenshot ${hours}:${minutes}:${seconds}.${milliseconds}`;
+    this._m(`##teamcity[testMetadata name='${screenshotDisplayName}' type='image' value='${fileName}' flowId='{id}']`, this.currentTestStats);
   }
 
   /**
