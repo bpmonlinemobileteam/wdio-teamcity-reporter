@@ -1,16 +1,11 @@
-wdio-teamcity-reporter [![Test](https://github.com/webdriverio-community/wdio-teamcity-reporter/actions/workflows/test.yaml/badge.svg?event=push)](https://github.com/webdriverio-community/wdio-teamcity-reporter/actions/workflows/test.yaml) ![npm](https://img.shields.io/npm/dm/wdio-teamcity-reporter)
+wdio-teamcity-reporter
 ======================
 
 WebdriverIO Teamcity reporter which makes it possible to display test results in real-time, makes test information available on the Tests tab of the Build Results page.
 
++screenshot support.
 
-## Installation
-
-```bash
-npm install wdio-teamcity-reporter --save-dev
-```
-
-Instructions on how to install WebdriverIO can be found here: https://webdriver.io/docs/gettingstarted
+Clone of https://github.com/webdriverio-community/wdio-teamcity-reporter
 
 
 ## Configuration
@@ -27,6 +22,7 @@ exports.config = {
         captureStandardOutput: false, // optional
         flowId: true, // optional
         message: '[title]', // optional
+        screenshotPath: 'temp/screenshots/', // optional
       }
     ]
   ],
