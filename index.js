@@ -93,7 +93,7 @@ class WdioTeamcityReporter extends WdioReporter {
 
     this.currentTestStats = null;
     this.screenshotDirFullPath = path.join(process.cwd(), params.screenshotPath);
-    fs.mkdirSync(this.screenshotFullPath, { recursive: true });
+    fs.mkdirSync(this.screenshotDirFullPath, { recursive: true });
   }
 
   /**
